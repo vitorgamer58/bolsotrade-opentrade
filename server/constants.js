@@ -2,15 +2,15 @@
 
 //exports.FATAL_ERROR = true;
 
-exports.TRADE_MAIN_COIN = "Marycoin";
+exports.TRADE_MAIN_COIN = "Niobio Cash";
 exports.TRADE_DEFAULT_PAIR = "Litecoin";
 exports.TRADE_COMISSION = 0.001;
 
-exports.recaptcha_pub_key = "6LeX5SQUAAAAAKTieM68Sz4MECO6kJXsSR7_sGP1";
+exports.recaptcha_pub_key = "6Ldf500UAAAAAIUXaCH-PzTfVGhO2Ah8U7U61c4w";
 
-exports.NOREPLY_EMAIL = 'no-reply@multicoins.org';
-exports.SUPPORT_EMAIL = 'ivanivanovkzv@gmail.com';
-exports.my_portSSL = 40443;
+exports.NOREPLY_EMAIL = 'vitorgamer58@bolsotrade.tk';
+exports.SUPPORT_EMAIL = 'vitorgamer58@gmail.com';
+exports.my_portSSL = 443;
 
 exports.my_port = process.env.PORT || 40080;
 
