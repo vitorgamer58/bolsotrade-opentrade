@@ -53,7 +53,7 @@ exports.send = function(coin, command, params, callback)
                     {result: result.success, message: 0, data: result.message || ""};
         
         console.log('rpcPostJSON: result:' + ret.result + " (message: " + (result.message || "")+" )");
-        callback(ret);
+        setTimeout(callback, 1, ret); //callback(ret);
     });
 }
 
@@ -79,27 +79,36 @@ exports.send3 = function(coinID, command, params, callback)
     }
     if (bWaitCoin[coinID] && bWaitCoin[coinID].status && bWaitCoin[coinID].status == true)
     {
-        /*if (bWaitCoin[coinID].time > Date.now() - 10000)
+        if (bWaitCoin[coinID].time > Date.now() - 10000)
         {
             console.log('Coin '+coinID+' not responce');
             callback({result: false, message: 'Coin not responce'});
             return;
-        }*/
+        }
         console.log('Wait coin '+coinID+' RPC queue. ')
         setTimeout(exports.send3, 1000, coinID, command, params, callback);
         return;
     }
     bWaitCoin[coinID] = {status: true, time: Date.now()};
-    g_constants.dbTables['coins'].selectAll('*', 'ROWID="'+coinID+'"', '', (err, rows) => {
-        if (err || !rows || !rows.length)
-        {
-            bWaitCoin[coinID] = {status: false, time: Date.now()};
-            callback({result: false, message: 'Coin not found'});
-            return;
-        }
-        exports.send(rows[0], command, params, ret => {
-            bWaitCoin[coinID] = {status: false, time: Date.now()};
-            callback(ret);
+    
+    try
+    {
+        g_constants.dbTables['coins'].selectAll('*', 'ROWID="'+coinID+'"', '', (err, rows) => {
+            if (err || !rows || !rows.length)
+            {
+                bWaitCoin[coinID] = {status: false, time: Date.now()};
+                callback({result: false, message: 'Coin not found'});
+                return;
+            }
+            exports.send(rows[0], command, params, ret => {
+                bWaitCoin[coinID] = {status: false, time: Date.now()};
+                callback(ret);
+            });
         });
-    });
+    }
+    catch(e)
+    {
+        bWaitCoin[coinID] = {status: false, time: Date.now()};
+        callback({result: false, message: 'Unexpected RPC error'});
+    }
 }
