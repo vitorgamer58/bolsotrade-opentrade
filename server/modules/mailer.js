@@ -6,7 +6,7 @@ const sendmail = require('sendmail')();
 
 exports.SendSignupConfirmation = function(email, url, urlCheck, callback)
 {
-    const subject = 'OpenTrade signup confirmation letter';
+    const subject = 'Bolsotrade signup confirmation letter';
 
     const urlHREF = "<a href='"+url+"'>"+url+"</a>";
     const confirmHREF = "<a href='"+urlCheck+"'>Click here to proceed with registration</a>";
@@ -18,7 +18,7 @@ exports.SendSignupConfirmation = function(email, url, urlCheck, callback)
         "<p>"+confirmHREF+"</p>" +
 //        "<p>Registration code is valid for 1 hour</p>" +
         "<p>This is an automated message. Please, do not reply to it.</p>" +
-        "<p>Welcome to OpenTrade!</br></br>Best Regards,<br>OpenTrade Team";
+        "<p>Welcome to Bolsotrade!</br></br>Best Regards,<br>Vitorgamer from Bolsotrade";
     
     try
     {
@@ -53,7 +53,7 @@ exports.SendSignupConfirmation = function(email, url, urlCheck, callback)
 
 exports.SendPasswordResetConfirmation = function(email, user, url, urlCheck, callback)
 {
-    const subject = 'OpenTrade password reset confirmation';
+    const subject = 'BolsoTrade password reset confirmation';
 
     const confirmHREF = "<a href='"+urlCheck+"'>Click here to reset your password</a>";
 
@@ -63,7 +63,7 @@ exports.SendPasswordResetConfirmation = function(email, user, url, urlCheck, cal
         "<p>"+confirmHREF+"</p>" +
         "<p>If you didn't request this, you can ignore this e-mail or let us know. Your password won't change until you create a new password</p>" +
         "<p>This is an automated message. Please, do not reply to it.</p>" +
-        "</br></br>Best Regards,<br>OpenTrade Team";
+        "</br></br>Best Regards,<br>Vitorgamer from Bolsotrade";
     
     try
     {
@@ -100,7 +100,7 @@ exports.SendTicket = function(ticket, callback)
     {
         let isSent = false;
         sendmail({
-            from: 'OpenTrade Mailer <'+g_constants.NOREPLY_EMAIL+'>',
+            from: 'Bolsotrade Mailer <'+g_constants.NOREPLY_EMAIL+'>',
             sender: g_constants.NOREPLY_EMAIL,
             to: g_constants.SUPPORT_EMAIL,
             replyTo: unescape(ticket.email),
@@ -127,7 +127,7 @@ exports.SendTicket = function(ticket, callback)
 
 exports.SendWithdrawConfirmation = function(email, user, url, urlCheck, callback)
 {
-    const subject = 'OpenTrade withdraw confirmation';
+    const subject = 'Bolsotrade withdraw confirmation';
 
     const confirmHREF = "<a href='"+urlCheck+"'>Click here to confirm withdraw</a>";
 
@@ -137,13 +137,13 @@ exports.SendWithdrawConfirmation = function(email, user, url, urlCheck, callback
         "<p>"+confirmHREF+"</p>" +
         "<p>If you didn't request this, you can ignore this e-mail or let us know.</p>" +
         "<p>This is an automated message. Please, do not reply to it.</p>" +
-        "</br></br>Best Regards,<br>OpenTrade Team";
+        "</br></br>Best Regards,<br>Vitorgamer from Bolsotrade";
     
     try
     {
         let isSent = false;
         sendmail({
-            from: 'OpenTrade Mailer <'+g_constants.NOREPLY_EMAIL+'>',
+            from: 'Bolsotrade Mailer <'+g_constants.NOREPLY_EMAIL+'>',
             sender: g_constants.NOREPLY_EMAIL,
             to: unescape(email),
             subject: subject,

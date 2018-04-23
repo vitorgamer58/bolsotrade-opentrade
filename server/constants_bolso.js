@@ -2,24 +2,21 @@
 
 //exports.FATAL_ERROR = true;
 
-exports.TRADE_MAIN_COIN = "Marycoin";
-exports.TRADE_MAIN_COIN_TICKER = "MC";
+exports.TRADE_MAIN_COIN = "Niobio Cash";
 exports.TRADE_DEFAULT_PAIR = "Litecoin";
 exports.TRADE_COMISSION = 0.001;
 
-exports.recaptcha_pub_key = "6LeX5SQUAAAAAKTieM68Sz4MECO6kJXsSR7_sGP1";
+exports.recaptcha_pub_key = "6Ldf500UAAAAAIUXaCH-PzTfVGhO2Ah8U7U61c4w";
 
-exports.NOREPLY_EMAIL = 'no-reply@multicoins.org';
-exports.SUPPORT_EMAIL = 'ivanivanovkzv@gmail.com';
-exports.my_portSSL = 40443;
+exports.NOREPLY_EMAIL = 'vitorgamer58@bolsotrade.tk';
+exports.SUPPORT_EMAIL = 'vitorgamer58@gmail.com';
+exports.my_portSSL = 443;
 
 exports.my_port = process.env.PORT || 40080;
 
 exports.SESSION_TIME = 3600*1000; //one hour
 
 exports.dbName = './database/sqlite.db';
-
-exports.tradeEnabled = true;
 
 exports.dbTables = [
    {
@@ -38,16 +35,6 @@ exports.dbTables = [
           ['info', 'TEXT']
         ],
         'commands' : 'PRIMARY KEY (login, email)'
-   },
-   {
-       'name' : 'chatban',
-       'cols' : [
-           ['userID', 'TEXT UNIQUE'],
-           ['startBanTime', 'INTEGER'],
-           ['endBanTime', 'INTEGER'],
-           ['comment', 'TEXT']
-        ],
-        'commands' : 'PRIMARY KEY (userID)'
    },
    {
        'name' : 'apikeys',
@@ -112,8 +99,7 @@ exports.dbTables = [
           ['price', 'TEXT'],
           ['price_pair', 'TEXT'],
           ['time', 'TEXT'],
-          ['info', 'TEXT'],
-          ['uuid', 'TEXT UNIQUE PRIMARY KEY']
+          ['info', 'TEXT']
         ],
         'commands' : 'FOREIGN KEY(coin) REFERENCES coins(name)'
    },
@@ -169,8 +155,6 @@ exports.dbIndexes = [
 exports.DEBUG_MODE = process.env.PORT ? true : false;
 exports.WEB_SOCKETS = null;
 exports.ExchangeBalanceAccountID = 0;
-
-exports.Roles = ['Administrator', 'Support', 'User'];
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Private constants
