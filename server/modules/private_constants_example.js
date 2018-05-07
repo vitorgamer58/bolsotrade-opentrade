@@ -6,7 +6,7 @@ exports.SSL_KEY = '/root/privkey.pem';
 exports.SSL_CERT = '/root/fullchain.pem';
 
 exports.walletspassphrase = {
-    'NBR' : 'LONG_RANDOM_STRING2',
-    'BBRC' : 'LONG_RANDOM_STRING3',
+    'DSH' : 'LONG_RANDOM_STRING2',
+    'ZCR' : 'LONG_RANDOM_STRING3',
     'MKT' : 'LONG_RANDOM_STRING4'
 };
