@@ -2,13 +2,13 @@
 
 //exports.FATAL_ERROR = true;
 
-exports.TRADE_MAIN_COIN = "Marycoin";
-exports.TRADE_MAIN_COIN_TICKER = "MC";
-exports.TRADE_DEFAULT_PAIR = "Litecoin";
+exports.TRADE_MAIN_COIN = "";
+exports.TRADE_MAIN_COIN_TICKER = "";
+exports.TRADE_DEFAULT_PAIR = "";
 exports.TRADE_COMISSION = 0.001;
 
-exports.NOREPLY_EMAIL = 'no-reply@multicoins.org';
-exports.SUPPORT_EMAIL = 'ivanivanovkzv@gmail.com';
+exports.NOREPLY_EMAIL = 'no-reply@bolsotrade.tk';
+exports.SUPPORT_EMAIL = 'vitorgamer58@gmail.com';
 exports.my_portSSL = 40443;
 
 exports.my_port = process.env.PORT || 40080;
@@ -24,7 +24,7 @@ exports.share = {
 exports.tradeEnabled = false;
 exports.recaptchaEnabled = false;
 
-exports.recaptcha_pub_key = "6LeX5SQUAAAAAKTieM68Sz4MECO6kJXsSR7_sGP1";
+exports.recaptcha_pub_key = "";
 
 exports.dbTables = [
    {
