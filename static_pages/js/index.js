@@ -10,6 +10,9 @@ catch(e)
   
 }
 
+let g_LB_Data = {};
+let g_MC_BTC_Price = 1000000;
+
 var g_CurrentPair = utils.DEFAULT_PAIR;
 var g_CurrentLang = 'ru';
 
@@ -65,14 +68,84 @@ $(() => {
   const currentPair = storage.getItem('CurrentPair');
   if (currentPair != null)
     g_CurrentPair = currentPair.value;
-    
-  $('#header_sell').text('Sell '+g_CurrentPair);
-  $('#header_buy').text('Buy '+g_CurrentPair);
   
+  UpdateBuySellText();  
+
   setInterval(IsNeadScroll, 5000);
 
   $('.staff_area').hide();
+  
+  setInterval(UpdateMCFromLB, 30000);
 });
+
+$('#inputBuyTotal').change(e => {
+  UpdateBuyComissionFromTotal();
+});
+
+$('#inputSellTotal').change(e => {
+  UpdateSellComissionFromTotal();
+});
+function UpdateBuySellText()
+{
+  $('#header_sell').text('Sell '+g_CurrentPair);
+  $('#header_buy').text('Buy '+g_CurrentPair);
+  
+  const token = $('#id_token').val();
+  if (!token || !token.length)
+  {
+    $('#id_balance_spiner1').hide();
+    $('#id_balance_spiner2').hide();
+    $('#id_sell_balance').text("0");
+    $('#id_buy_balance').text("0");
+  }
+  
+  $('#id_buy_coin').text(utils.MAIN_COIN);
+  $('#id_sell_coin').text(g_CurrentPair);
+  
+}
+
+function UpdateMCFromLB()
+{
+  const MC = coinNameToTicker[utils.MAIN_COIN] ? coinNameToTicker[utils.MAIN_COIN].ticker || 'MC' : 'MC';
+  
+  fetch('/bitcoinaverage/ticker-all-currencies/')
+    .then(response => {
+      if (response.status !== 200)
+        return;
+      return response.json();
+    })
+    .then( data => {
+      g_LB_Data = data;
+      UpdateMCInfo();
+    });
+    
+    function UpdateMCInfo() {
+      if (!g_LB_Data || !g_LB_Data.USD || !g_LB_Data.RUB)
+        return;
+      
+      if (MC == 'BTC') g_MC_BTC_Price = 0;
+        
+      const USD = g_LB_Data.USD.rates.last/(g_MC_BTC_Price+1);
+      const BTC = 1/(g_MC_BTC_Price+1);
+      const EUR = g_LB_Data.EUR.rates.last/(g_MC_BTC_Price+1);
+      const RUB = g_LB_Data.RUB.rates.last/(g_MC_BTC_Price+1);
+      
+      $('#id_MC_info').empty();
+      if (MC != 'BTC')
+      {
+        $('#id_MC_info').append($('<li class="breadcrumb-item">1 ' + MC + ' = '+BTC.toFixed(8)+' BTC</li>'));
+        $('#id_MC_info').append($('<li class="breadcrumb-item">'+USD.toFixed(3)+' USD</li>'));
+        $('#id_MC_info').append($('<li class="breadcrumb-item">'+EUR.toFixed(3)+' EUR</li>'));
+      }
+      else
+      {
+        $('#id_MC_info').append($('<li class="breadcrumb-item">1 ' + MC + ' = '+USD.toFixed(2)+' USD</li>'));
+        $('#id_MC_info').append($('<li class="breadcrumb-item">'+EUR.toFixed(2)+' EUR</li>'));
+      }
+      
+      $('#id_MC_info').append($('<li class="breadcrumb-item">'+RUB.toFixed(2)+' RUB</li>'));
+    }
+}
 
 function AddCoinInfo(info)
 {
@@ -171,6 +244,7 @@ function AddOrder(order)
       return;
       
     $('#loader').show();
+    $("html, body").animate({ scrollTop: 0 }, "slow");
     $.post( "/submitorder", order, function( data ) {
         $('#loader').hide();
         if (data.result != true)
@@ -304,19 +378,24 @@ function UpdateMarket(message)
     if (coinName == utils.MAIN_COIN)
       continue;
     
-    
 //    const price = (message.coins[i].price*1).toFixed(8)*1;
     const price = (message.coins[i].fromBuyerToSeller/(message.coins[i].volume == 0 ? 1 : message.coins[i].volume)).toFixed(8)*1;
     const vol = (message.coins[i].volume*1).toFixed(8)*1;
-    const ch = message.coins[i].prev_frombuyertoseller ? (price - message.coins[i].prev_frombuyertoseller*1) : price;
+    const ch = message.coins[i].prev_frombuyertoseller ? ((price - message.coins[i].prev_frombuyertoseller*1) / (price != 0 ? price : 1))*100 : 100;
     
     const chColor = ch*1 < 0 ? "text-danger" : "text-success";
     
+    if (coinName == 'Bitcoin')
+    {
+      g_MC_BTC_Price = price;
+      setTimeout(UpdateMCFromLB, 1);
+    }
+
     const tr = $('<tr></tr>')
       .append($('<td>'+message.coins[i].ticker+'</td>'))
       .append($('<td>'+price+'</td>'))
       .append($('<td>'+vol+'</td>'))
-      .append($('<td><span class="'+chColor+'">'+(ch*1).toFixed(8)*1+'</span></td>'))
+      .append($('<td><span class="'+chColor+'">'+(ch*1).toFixed(2)+'</span></td>'))
       .css( 'cursor', 'pointer' )
       .on('click', e => {
         if (coinName == g_CurrentPair)
@@ -333,6 +412,30 @@ function UpdateMarket(message)
     $('#id_buy_orders_header').append($('<th id="id_buy_orders_header_price">Price</th><th>'+coinNameToTicker[utils.MAIN_COIN].ticker+'</th><th>'+coinNameToTicker[g_CurrentPair].ticker+'</th>'))
     $('#id_sell_orders_header').append($('<th>Price</th><th>'+coinNameToTicker[utils.MAIN_COIN].ticker+'</th><th>'+coinNameToTicker[g_CurrentPair].ticker+'</th>'))
   }
+  
+  UpdateBuySellTickers();
+}
+
+function UpdateBuySellTickers()
+{
+  if (!coinNameToTicker[g_CurrentPair])
+    return;
+  
+  const MC = coinNameToTicker[utils.MAIN_COIN] ? coinNameToTicker[utils.MAIN_COIN].ticker || 'MC' : 'MC';
+  const BTC = coinNameToTicker[g_CurrentPair].ticker;
+  
+  $('#id_amount_buy').text(BTC);
+  $('#id_amount_sell').text(BTC);
+  
+  $('#id_price_buy').text(MC);
+  $('#id_price_sell').text(MC);
+  
+  $('#id_comission_buy').text(MC);
+  $('#id_comission_sell').text(MC);
+  
+  $('#id_total_buy').text(MC);
+  $('#id_total_sell').text(MC);
+
 }
 
 function AddChatMessage(message, noscroll, method)
@@ -539,9 +642,19 @@ function UpdateOrders(orders)
     orders.buy = [{price: 0.0}];
   if (!orders.sell.length)
     orders.sell = [{price: 0.0}];
-    
-  $('#id_max_bid').text(utils.MakePrice(orders.buy[0].price)); //((orders.buy[0].price*1.0).toFixed(8)*1);
-  $('#id_max_ask').text(utils.MakePrice(orders.sell[0].price)); //((orders.sell[0].price*1.0).toFixed(8)*1);
+  
+  const txtBuyPrice = utils.MakePrice(orders.buy[0].price);
+  const txtSellPrice = utils.MakePrice(orders.sell[0].price);
+  
+  const askButton = $('<button type="button" class="p-0 btn btn-link"></button>').append(txtBuyPrice).on('click', e => {
+        $('#inputBuyPrice').val(txtBuyPrice);
+      })
+  const bidButton = $('<button type="button" class="p-0 btn btn-link"></button>').append(txtSellPrice).on('click', e => {
+        $('#inputSellPrice').val(txtSellPrice);
+      })
+  
+  $('#id_max_bid').empty().append(bidButton); //.text(utils.MakePrice(orders.buy[0].price)); //((orders.buy[0].price*1.0).toFixed(8)*1);
+  $('#id_max_ask').empty().append(askButton); //.text(utils.MakePrice(orders.sell[0].price)); //((orders.sell[0].price*1.0).toFixed(8)*1);
   
   if ($('#inputSellPrice').val().length == 0) $('#inputSellPrice').val($('#id_max_bid').text());
   if ($('#inputBuyPrice').val().length == 0) $('#inputBuyPrice').val($('#id_max_ask').text());
@@ -564,6 +677,7 @@ function UpdateUserOrders(userOrders)
     
     const close = $('<button type="button" class="btn btn-primary btn-sm">Close</button>').on('click', e => {
       $('#loader').show();
+      $("html, body").animate({ scrollTop: 0 }, "slow");
       $.post( "/closeorder", {orderID: orderID}, function( data ) {
         $('#loader').hide();
         if (data.result != true)
@@ -597,19 +711,35 @@ function UpdateBalance(message)
   {
     if (unescape(message.coin.name) == utils.MAIN_COIN)
     {
+      $('#id_balance_spiner1').hide();
       $('#id_buy_balance').empty();
       buyBalance = (message.balance*1.0).toFixed(8)*1;
       if (buyBalance < 0) buyBalance = 0.0;
-      $('#id_buy_balance').text(buyBalance);
-      $('#id_buy_coin').text(utils.MAIN_COIN);
+      
+      const txtBalance = buyBalance;
+      const balanceButton = $('<button type="button" class="p-0 btn btn-link"></button>').append(txtBalance).on('click', e => {
+        $('#inputBuyTotal').val(txtBalance);
+        UpdateBuyComissionFromTotal();
+      })
+      
+      $('#id_buy_balance').append(balanceButton); //.text(buyBalance);
+      //$('#id_buy_coin').text(utils.MAIN_COIN);
     }
     if (unescape(message.coin.name) == g_CurrentPair)
     {
+      $('#id_balance_spiner2').hide();
       $('#id_sell_balance').empty();
       sellBalance = (message.balance*1.0).toFixed(8)*1;
       if (sellBalance < 0) sellBalance = 0.0;
-      $('#id_sell_balance').text(sellBalance);
-      $('#id_sell_coin').text(g_CurrentPair);
+
+      const txtBalance = sellBalance;
+      const balanceButton = $('<button type="button" class="p-0 btn btn-link"></button>').append(txtBalance).on('click', e => {
+        $('#inputSellAmount').val(txtBalance);
+        UpdateSellComission();
+      })
+
+      $('#id_sell_balance').append(balanceButton); //.text(sellBalance);
+      //$('#id_sell_coin').text(g_CurrentPair);
     }
   }
 }
@@ -631,7 +761,6 @@ function UpdateBuyComission()
 {
   const amount = $('#inputBuyAmount').val() || 0;
   const price = $('#inputBuyPrice').val() || 0;
-  const balance = $('#id_buy_balance').text() || 0;
   try 
   {
     const comission = utils.COMISSION*amount*price;
@@ -641,11 +770,41 @@ function UpdateBuyComission()
   }
   catch(e) {}
 }
+
+function UpdateBuyComissionFromTotal()
+{
+  const total = $('#inputBuyTotal').val()*1 || 0.0001;
+  const price = $('#inputBuyPrice').val()*1 || 0.0001;
+  try 
+  {
+    const amount = (total / (price + utils.COMISSION*price)).toFixed(8)*1;
+    const comission = utils.COMISSION*amount*price;
+    $('#inputBuyComission').val(comission.toFixed(8)*1);
+    $('#inputBuyAmount').val(amount.toFixed(8)*1);
+  }
+  catch(e) {}
+  
+  //UpdateBuyComission();
+}
+function UpdateSellComissionFromTotal()
+{
+  const total = $('#inputSellTotal').val()*1 || 0.0001;
+  const price = $('#inputSellPrice').val()*1 || 0.0001;
+  try 
+  {
+    const amount = (total / (price + utils.COMISSION*price)).toFixed(8)*1;
+    const comission = utils.COMISSION*amount*price;
+    $('#inputSellComission').val(comission.toFixed(8)*1);
+    $('#inputSellAmount').val(amount.toFixed(8)*1);
+  }
+  catch(e) {}
+  //UpdateSellComission();
+}
+
 function UpdateSellComission()
 {
   const amount = $('#inputSellAmount').val() || 0;
   const price = $('#inputSellPrice').val() || 0;
-  const balance = $('#id_sell_balance').text() || 0;
   try 
   {
     const comission = utils.COMISSION*amount*price;
@@ -745,7 +904,7 @@ function SetChartLegend()
   const MC = coinNameToTicker[utils.MAIN_COIN].ticker; 
   const COIN = coinNameToTicker[g_CurrentPair].ticker
   
-  $('#chart_legend').empty();
+
   $.getJSON( "/api/v1/public/getmarketsummary?market="+MC+"-"+COIN, ret => {
     if (!ret || !ret.success || ret.success != true || MC != coinNameToTicker[utils.MAIN_COIN].ticker || COIN != coinNameToTicker[g_CurrentPair].ticker) 
       return;
@@ -761,6 +920,7 @@ function SetChartLegend()
         '<li class="nav-item mr-2 ml-3">24V: '+ret.result.Volume+'</li>'+
       '</ul>'
       )//('<h4>'+COIN+' / '+MC+'</h4>');
+    $('#chart_legend').empty();
     $('#chart_legend').append(legend);
   });
 }

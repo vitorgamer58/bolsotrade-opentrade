@@ -12,9 +12,15 @@ const WebSocketServer = require('ws').Server;
 const log_file = require("fs").createWriteStream(__dirname + '/debug.log', {flags : 'w'});
 const log_stdout = process.stdout;
 
-console.log = function(d) { 
+console.log = function(d, userID) { 
+    if (!g_constants.DEBUG_LOG)
+        return;
+
   log_file.write(util.format(d) + '\n');
   log_stdout.write(util.format(d) + '\n');
+  
+  if (userID)
+    require("./utils").log_user(userID, d);
 };
 
 const app = express();
@@ -29,8 +35,8 @@ var httpServer = http.createServer(app);
 var httpsServer = https.createServer(g_constants.SSL_options, app);
 
 var httpListener = httpServer.listen(g_constants.my_port);
-var httpsListener = httpsServer.listen(g_constants.my_portSSL, function(){
-    console.log("SSL Proxy listening on port "+g_constants.my_portSSL);
+var httpsListener = httpsServer.listen(g_constants.share.my_portSSL, function(){
+    console.log("SSL Proxy listening on port "+g_constants.share.my_portSSL);
 });
 
 var lastSocketKey = 0;
@@ -42,9 +48,14 @@ httpListener.on('connection', function(socket) {
     socketMap.http[socketKey] = socket;
     socket.on('close', function() {
         /* remove socket when it is closed */
+        g_constants.ReleaseAddress(socketMap.http[socketKey].remoteAddress);
         delete socketMap.http[socketKey];
     });
+    
+    if (!g_constants.IsAllowedAddress(socket.remoteAddress))
+        socket.end();
 });
+
 httpsListener.on('connection', function(socket) {
     /* generate a new, unique socket-key */
     const socketKey = ++lastSocketKey;
@@ -52,8 +63,12 @@ httpsListener.on('connection', function(socket) {
     socketMap.https[socketKey] = socket;
     socket.on('close', function() {
         /* remove socket when it is closed */
+        g_constants.ReleaseAddress(socketMap.https[socketKey].remoteAddress);
         delete socketMap.https[socketKey];
     });
+    
+    if (!g_constants.IsAllowedAddress(socket.remoteAddress))
+        socket.end();
 });
 
 //httpListener.on('error', () => {});
