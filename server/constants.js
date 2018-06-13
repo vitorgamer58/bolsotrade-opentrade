@@ -1,30 +1,34 @@
 'use strict';
 
-//exports.FATAL_ERROR = true;
+const SUPPORT_EMAIL = 'support@email.com';
+const NOREPLY_EMAIL = 'no-reply@email.com';
 
-exports.TRADE_MAIN_COIN = "";
-exports.TRADE_MAIN_COIN_TICKER = "";
-exports.TRADE_DEFAULT_PAIR = "";
+const MAILER_NAME = 'OpenTrade Mailer';
+const START_MESSAGE = 'OpenTrade started!';
+
+const DashForks = ['DASH', 'WAVI'];
+
+exports.DEBUG_LOG = true;
+
+exports.share = {
+   tradeEnabled: false,
+   recaptchaEnabled: false,
+   
+   my_portSSL: 40443,
+   
+   TRADE_MAIN_COIN: "Marycoin",
+   TRADE_MAIN_COIN_TICKER: "MC",
+   TRADE_DEFAULT_PAIR: "Litecoin"
+};
+
 exports.TRADE_COMISSION = 0.001;
-
-exports.NOREPLY_EMAIL = 'no-reply@bolsotrade.tk';
-exports.SUPPORT_EMAIL = 'vitorgamer58@gmail.com';
-exports.my_portSSL = 40443;
 
 exports.my_port = process.env.PORT || 40080;
 
 exports.SESSION_TIME = 3600*1000; //one hour
 
-exports.dbName = './database/sqlite.db';
-
-exports.share = {
-   tradeEnabled: false,
-   recaptchaEnabled: false
-};
-exports.tradeEnabled = false;
-exports.recaptchaEnabled = false;
-
-exports.recaptcha_pub_key = "";
+exports.recaptcha_pub_key = "6LeX5SQUAAAAAKTieM68Sz4MECO6kJXsSR7_sGP1";
+const MAX_IP_CONNECTIONS = 100;
 
 exports.dbTables = [
    {
@@ -141,15 +145,20 @@ exports.dbTables = [
         ],
         'commands' : 'FOREIGN KEY(coin, coin_pair) REFERENCES coins(name, name)'
    },
-/*   {
-       'name' : 'tx_journal',
+   {
+       'name' : 'referals',
        'cols' : [
-           ['from_to', 'TEXT UNIQUE PRIMARY KEY'],
-           ['amount', 'TEXT'],
-           ['status', 'TEXT'],
-           ['comment', 'TEXT']
-        ]
-   }*/
+           ['userFrom', 'TEXT'],
+           ['pageFrom', 'TEXT'],
+           ['IP', 'TEXT'],
+           ['timeIn', 'TEXT'],
+           ['timeReg', 'TEXT'],
+           ['userRegID', 'TEXT UNIQUE'],
+           ['history', 'TEXT'],
+           ['uid', 'TEXT UNIQUE']
+        ],
+        'commands': 'PRIMARY KEY (userRegID, uid)'
+   }
 ];
 
 exports.dbIndexes = [
@@ -177,11 +186,17 @@ exports.ExchangeBalanceAccountID = 0;
 
 exports.Roles = ['Administrator', 'Support', 'User'];
 
+exports.dbName = './database/sqlite.db';
+
 ////////////////////////////////////////////////////////////////////////////////////
 // Private constants
 const PRIVATE = require("./modules/private_constants");
 exports.password_private_suffix = PRIVATE.password_private_suffix;
 exports.recaptcha_priv_key = PRIVATE.recaptcha_priv_key;
+exports.SUPPORT_EMAIL = PRIVATE.SUPPORT_EMAIL || SUPPORT_EMAIL;
+exports.NOREPLY_EMAIL = PRIVATE.NOREPLY_EMAIL || NOREPLY_EMAIL;
+exports.START_MESSAGE = PRIVATE.START_MESSAGE || START_MESSAGE;
+exports.MAILER_NAME = PRIVATE.MAILER_NAME || MAILER_NAME;
 
 exports.DONATORS = [
     {userID: 1, percent: 99},
@@ -200,3 +215,34 @@ exports.SSL_options = {
 };
 
 ////////////////////////////////////////////////////////////////////////////////////
+
+exports.IsDashFork = function(name)
+{
+    for (let i=0; i<DashForks.length; i++)
+        if (name == DashForks[i])
+            return true;
+    return false;
+}
+
+let g_IP_connections = {};
+exports.IsAllowedAddress = function(addr)
+{
+    if (PRIVATE.IsUnlimitedAddress && PRIVATE.IsUnlimitedAddress(addr))
+        return true;
+        
+    if (!g_IP_connections[addr]) g_IP_connections[addr] = {n: 0};
+    if (g_IP_connections[addr].n < 0) g_IP_connections[addr].n = 0;
+    if (g_IP_connections[addr].n > MAX_IP_CONNECTIONS)
+        return false;
+    
+    g_IP_connections[addr].n++;
+    return true;
+}
+exports.ReleaseAddress = function(addr)
+{
+    if (PRIVATE.IsUnlimitedAddress && PRIVATE.IsUnlimitedAddress(addr))
+        return;
+        
+    if (g_IP_connections[addr] && g_IP_connections[addr].n > 0) 
+        g_IP_connections[addr].n--;
+}

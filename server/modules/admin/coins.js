@@ -6,7 +6,8 @@ const g_constants = require("../../constants.js");
 const RPC = require("../rpc.js");
 const WebSocket = require('ws');
 const admin_utils = require('./utils.js');
-const apiV1 = require("../api/v1.js")
+const apiV1 = require("../api/v1.js");
+const mailer = require("../mailer");
 
 exports.onTestRPC = function(ws, req, data)
 {
@@ -68,6 +69,7 @@ exports.onSupport = function(ws, req, data)
                     return;
                 
                 rows[0].info = JSON.parse(utils.Decrypt(unescape(rows[0].info)));
+                rows[0]['userID'] = status.id;
                 SupportCoin(rows[0], ws, data.action);
             });
         });    
@@ -89,9 +91,15 @@ exports.onSupport = function(ws, req, data)
             coin.info['orders'] = 'Disabled';
         
         if (action == 'disable_all')
+        {
             g_constants.share.tradeEnabled = false;
+            mailer.SendAdminNotify('UserID='+coin.userID+' has disabled trading');
+        }
         if (action == 'enable_all')
+        {
             g_constants.share.tradeEnabled = true;
+            mailer.SendAdminNotify('UserID='+coin.userID+' has enabled trading');
+        }
             
         g_constants.dbTables['coins'].update('info="'+escape(utils.Encrypt(JSON.stringify(coin.info) || '{}'))+'"', 'ROWID='+coin.id, err => {
             if (!err)
@@ -154,16 +162,19 @@ function SaveCoin(data, callback)
 
 function SendRPC(coin, command, params, callback)
 {
-    g_constants.dbTables['coins'].selectAll("*", "name='"+escape(coin)+"'", "", (err, rows) => {
+    g_constants.dbTables['coins'].selectAll("ROWID AS id, *", "name='"+escape(coin)+"'", "", (err, rows) => {
         if (err || !rows || !rows.length)
-        {
-            callback({result: false, data: {}});
-            return;
+            return callback({result: false, data: {}});
+
+        try {
+            if (command == 'getbalance' || command == 'getinfo' || command == 'getblockchaininfo')
+                RPC.send3(1, rows[0].id, command, params, callback);
+            else
+                callback({result: false, data: {}});
+        } 
+        catch(e) {
+            console.log(e.message, 1);
         }
-        if (command == 'getbalance' || command == 'getinfo' || command == 'getblockchaininfo')
-            RPC.send(rows[0], command, params, callback);
-        else
-            callback({result: false, data: {}});
     });
 }
 
